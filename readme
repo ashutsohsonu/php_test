@@ -3,7 +3,7 @@ GET /orders/active - List active orders (VIP priority queue)
 POST /orders/{id}/complete - Complete orders
 mysql persistence
 
-
+docker comper up -d
 docker build -t restaurant-api
 docker run -d -p 8080:80 restaurant-api
-curl http://localh      ost:8080/orders/active
+curl http://localhost:8080/orders/active
