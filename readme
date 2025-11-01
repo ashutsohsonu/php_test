@@ -1,1 +1,9 @@
-readme
+POST /orders - Create orders with capacity enforcement
+GET /orders/active - List active orders (VIP priority queue)
+POST /orders/{id}/complete - Complete orders
+mysql persistence
+
+
+docker build -t restaurant-api
+docker run -d -p 8080:80 restaurant-api
+curl http://localh      ost:8080/orders/active

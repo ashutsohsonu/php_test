@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql
+    container_name: restaurant-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: restaurant_db
+      MYSQL_USER: restaurant_user
+      MYSQL_PASSWORD: restaurant_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql 
+    networks:
+      - restaurant-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+
+  # PHP Apache Application
+  app:
+    build: .
+    container_name: restaurant-api
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_NAME: restaurant_db
+      DB_USER: restaurant_user
+      DB_PASS: restaurant_pass
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    networks:
+      - restaurant-network
+
+networks:
+  restaurant-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
