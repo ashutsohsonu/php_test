@@ -1,9 +1,101 @@
-POST /orders - Create orders with capacity enforcement
-GET /orders/active - List active orders (VIP priority queue)
-POST /orders/{id}/complete - Complete orders
-mysql persistence
+# API available at: http://localhost:8080
 
-docker comper up -d
-docker build -t restaurant-api
-docker run -d -p 8080:80 restaurant-api
+# Setup instructions
+# 1. Build and start containers:
+docker-compose up -d --build
+
+
+# 2. Install dependencies:
+docker-compose exec app composer install
+
+# setup phpunit
+docker-compose exec app composer require --dev symfony/test-pack
+docker-compose exec app composer require --dev phpunit/phpunit
+
+
+
+# 3. Create database and run migrations:
+docker-compose exec app php bin/console doctrine:database:create
+docker-compose exec app php bin/console make:migration
+docker-compose exec app php bin/console doctrine:migrations:migrate --no-interaction
+docker-compose exec mysql mysql -usymfony -psecret -e "CREATE DATABASE restaurant_orders_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+
+docker-compose exec app php bin/console cache:clear
+
+
+# 4. Access the API:
+# http://localhost:8080/orders
+
+# 5. Run background processor (optional):
+docker-compose exec app php bin/console app:process-orders
+
+
+
+docker-compose exec php php bin/console doctrine:database:connect
+docker-compose exec php php bin/console doctrine:database:create --env=test
+
+
+# 6. Run tests:
+docker-compose exec app php bin/phpunit
+
+
+
+# 7. Check logs if there are issues
+# Check containers are running
+docker-compose ps
+
+# Check MySQL logs
+docker-compose logs mysql --tail=50
+
+# Check app logs
+docker-compose logs app --tail=50
+
+
+
+
+
+POST /orders
+{
+  "items": ["burger", "fries"],
+  "pickup_time": "2025-09-26T12:30:00Z",
+  "VIP": true
+}
+
+
+/orders/active
+
+/orders/{id}/complete
+/orders/{id}
+/orders/status/kitchen
+
+/orders
+
+
+
+# Create regular order
+curl -X POST http://localhost:8080/orders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": ["burger", "fries"],
+    "pickup_time": "2025-09-26T12:30:00Z",
+    "VIP": false
+  }'
+
+# Create VIP order
+curl -X POST http://localhost:8080/orders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": ["steak", "salad"],
+    "pickup_time": "2025-09-26T13:00:00Z",
+    "VIP": true
+  }'
+
+# List active orders
 curl http://localhost:8080/orders/active
+
+# Complete order
+curl -X POST http://localhost:8080/orders/1/complete
+
+# Check kitchen status
+curl http://localhost:8080/orders/status/kitchen
